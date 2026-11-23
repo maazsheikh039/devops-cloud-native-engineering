@@ -1,0 +1,9 @@
+.venv/
+*.egg-info/
+__pycache__/
+build/
+reports/
+data/
+lab.env
+config/known_hosts*
+sshtarget/authorized_keys
