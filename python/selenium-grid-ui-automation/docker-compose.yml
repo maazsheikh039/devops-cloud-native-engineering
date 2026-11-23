@@ -1,0 +1,58 @@
+services:
+  webapp:
+    build: ./app
+    image: taskboard:lab
+    ports:
+      - "5000:5000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  selenium-hub:
+    image: selenium/hub:4.18.1-20240224
+    ports:
+      - "4444:4444"
+
+  chrome:
+    image: selenium/node-chrome:4.18.1-20240224
+    shm_size: "1gb"
+    depends_on:
+      - selenium-hub
+    environment:
+      SE_EVENT_BUS_HOST: selenium-hub
+      SE_EVENT_BUS_PUBLISH_PORT: "4442"
+      SE_EVENT_BUS_SUBSCRIBE_PORT: "4443"
+      SE_NODE_MAX_SESSIONS: "2"
+      SE_NODE_OVERRIDE_MAX_SESSIONS: "true"
+
+  firefox:
+    image: selenium/node-firefox:4.18.1-20240224
+    shm_size: "1gb"
+    depends_on:
+      - selenium-hub
+    environment:
+      SE_EVENT_BUS_HOST: selenium-hub
+      SE_EVENT_BUS_PUBLISH_PORT: "4442"
+      SE_EVENT_BUS_SUBSCRIBE_PORT: "4443"
+      SE_NODE_MAX_SESSIONS: "2"
+      SE_NODE_OVERRIDE_MAX_SESSIONS: "true"
+
+  tests:
+    build: ./framework
+    image: taskboard-tests:lab
+    profiles: ["tests"]
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    depends_on:
+      webapp:
+        condition: service_healthy
+      selenium-hub:
+        condition: service_started
+    environment:
+      GRID_URL: http://selenium-hub:4444
+      APP_URL: http://webapp:5000
+      ARTIFACTS_DIR: /tests/artifacts
+      BROWSER: chrome
+    volumes:
+      - ./artifacts/ci:/tests/artifacts
