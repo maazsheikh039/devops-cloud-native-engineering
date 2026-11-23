@@ -1,0 +1,19 @@
+services:
+  web:
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 100
+
+  proxy:
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /run
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETUID, SETGID]
+    security_opt:
+      - no-new-privileges:true
