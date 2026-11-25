@@ -1,0 +1,5 @@
+k8s_version=v1.30.0
+runtime=containerd://1.7.15
+static_pods=4
+scheduler_leader=kcna
+api_groups=23

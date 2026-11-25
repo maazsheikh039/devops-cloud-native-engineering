@@ -1,0 +1,14 @@
+FROM python:3.12.4-slim
+ARG APP_VERSION=1.0
+ENV APP_VERSION=${APP_VERSION} \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app.py .
+# Numeric UID so Kubernetes can verify runAsNonRoot
+USER 10001
+EXPOSE 8080
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "4", \
+     "--worker-tmp-dir", "/tmp", "--access-logfile", "-", "app:app"]
