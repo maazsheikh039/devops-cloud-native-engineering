@@ -1,0 +1,4 @@
+Inventory API {{ .Values.image.tag }} is deployed as release "{{ .Release.Name }}" in namespace {{ .Release.Namespace }}.
+Test it with:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ .Release.Name }}-inventory-api 9090:{{ .Values.service.port }}
+  curl http://localhost:9090/

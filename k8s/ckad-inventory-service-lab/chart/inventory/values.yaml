@@ -1,0 +1,18 @@
+replicaCount: 1
+image:
+  repository: inventory-api
+  tag: v1
+  pullPolicy: IfNotPresent
+greeting: "hello from staging"
+service:
+  port: 80
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 300m
+    memory: 192Mi
+redis:
+  image: redis:7.2-alpine
+  password: change-me-staging

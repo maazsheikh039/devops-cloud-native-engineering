@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shop
+  labels:
+    team: inventory
+    env: dev
+    # Warn (do not block) when a workload violates the "restricted" profile
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest

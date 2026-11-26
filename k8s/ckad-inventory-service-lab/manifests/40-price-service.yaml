@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: price-config
+  namespace: shop
+data:
+  CURRENCY: EUR
+  prices.json: |
+    {"apples": 1.20, "bananas": 0.50, "cherries": 4.00, "dates": 6.50, "figs": 3.75}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: price-service
+  namespace: shop
+  labels:
+    app: price-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: price-service
+  template:
+    metadata:
+      labels:
+        app: price-service
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 80
+          env:
+            - name: PRICE_CURRENCY
+              valueFrom:
+                configMapKeyRef:
+                  name: price-config
+                  key: CURRENCY
+          readinessProbe:
+            httpGet:
+              path: /prices.json
+              port: 80
+            periodSeconds: 5
+          volumeMounts:
+            - name: prices
+              mountPath: /usr/share/nginx/html/prices.json
+              subPath: prices.json
+      volumes:
+        - name: prices
+          configMap:
+            name: price-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: price-service
+  namespace: shop
+spec:
+  selector:
+    app: price-service
+  ports:
+    - port: 80
+      targetPort: 80

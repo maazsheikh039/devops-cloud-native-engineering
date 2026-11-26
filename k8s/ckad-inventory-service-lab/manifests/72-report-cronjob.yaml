@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: inventory-report
+  namespace: shop
+spec:
+  schedule: "*/1 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 30
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 50
+      template:
+        metadata:
+          labels:
+            access: inventory-client
+            app: inventory-report
+        spec:
+          serviceAccountName: reporter
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 100
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: report
+              image: curlimages/curl:8.10.1
+              command:
+                - sh
+                - -c
+                - |
+                  SA_DIR=/var/run/secrets/kubernetes.io/serviceaccount
+                  TOKEN=$(cat "$SA_DIR/token")
+                  API=https://kubernetes.default.svc/api/v1/namespaces/shop
+                  echo "inventory: $(curl -sf http://inventory-api/items)"
+                  echo "pods-list: $(curl -s -o /dev/null -w '%{http_code}' --cacert "$SA_DIR/ca.crt" -H "Authorization: Bearer $TOKEN" "$API/pods")"
+                  echo "secrets-list: $(curl -s -o /dev/null -w '%{http_code}' --cacert "$SA_DIR/ca.crt" -H "Authorization: Bearer $TOKEN" "$API/secrets")"
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]

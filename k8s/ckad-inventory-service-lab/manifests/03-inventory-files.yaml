@@ -1,0 +1,10 @@
+apiVersion: v1
+data:
+  app.properties: |
+    log.level=info
+    feature.discounts=true
+    cache.ttl.seconds=30
+kind: ConfigMap
+metadata:
+  name: inventory-files
+  namespace: shop

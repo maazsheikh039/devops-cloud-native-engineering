@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: seed-inventory
+  namespace: shop
+spec:
+  completionMode: Indexed
+  completions: 5
+  parallelism: 2
+  backoffLimit: 3
+  activeDeadlineSeconds: 180
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        access: inventory-client
+        app: seed-inventory
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: seed
+          image: curlimages/curl:8.10.1
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              set apples bananas cherries dates figs
+              shift "$JOB_COMPLETION_INDEX"
+              echo "index $JOB_COMPLETION_INDEX seeding item $1"
+              curl -sf -X POST "http://inventory-api/items/$1"
+              echo
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
